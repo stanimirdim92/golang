@@ -13,30 +13,30 @@ import (
 	"time"
 )
 
-
 var (
-	csvFilename = flag.String("csv", "problems.csv", "a csv file in the format of 'question,aswer'")
-	timeLimit = flag.Int("limit", 30, "A timeout limit for the quiz. Defaults to 30 seconds.")
-	shuffle = flag.Bool("rand", false, "Randomize questions.")
-	answerCh = make(chan string)
+	csvFilename = flag.String("csv", "problems.csv", "a csv file in the format of 'question,answer'")
+	timeLimit   = flag.Int("limit", 30, "A timeout limit for the quiz. Defaults to 30 seconds.")
+	shuffle     = flag.Bool("rand", true, "Randomize questions.")
+	answerCh    = make(chan string)
 )
 
 type question struct {
 	question string
-	answer string
+	answer   string
 }
 
 // Checks for error and shows the message
 func checkError(err error, msg string) {
 	if err != nil {
-		fmt.Println(msg)
-		os.Exit(1)
+		log.Fatal(msg, err)
 	}
 }
 
 // Read a CSV file
 func readCSV() []question {
+	fmt.Println(strings.ReplaceAll(*csvFilename, " ", ""))
 	file, err := os.OpenFile(strings.ReplaceAll(*csvFilename, " ", ""), os.O_RDONLY, 0666)
+
 	checkError(err, fmt.Sprintf("Failed to open CSV file: %s.\n", *csvFilename))
 
 	// create new reader from reader
@@ -45,7 +45,7 @@ func readCSV() []question {
 	result := make([]question, 0)
 
 	for {
-		line, err := csvReader.Read();
+		line, err := csvReader.Read()
 		if err == io.EOF {
 			break
 		}
@@ -61,7 +61,8 @@ func readCSV() []question {
 		}
 	}
 
-	file.Close()
+	err = file.Close()
+	checkError(err, "")
 
 	return result
 }
@@ -75,16 +76,16 @@ func main() {
 
 	result := readCSV()
 
- 	totalQuestions := len(result)
-    fmt.Println("Total questions: ", totalQuestions)
+	totalQuestions := len(result)
+	fmt.Println("Total questions: ", totalQuestions)
 
 	showQuiz(result)
 }
 
 // Waits for user input from the terminal.
 func getAnswer() {
-	answer, err :=  bufio.NewReader(os.Stdin).ReadString('\n')
-	checkError(err, fmt.Sprintf("Error: %s.\n", err,))
+	answer, err := bufio.NewReader(os.Stdin).ReadString('\n')
+	checkError(err, fmt.Sprintf("Error: %s.\n", err))
 
 	answerCh <- sanitize(answer) // broadcast to channel
 }
@@ -97,9 +98,9 @@ func showScore(correctAnswers int, totalQuestions int) {
 
 // Randomize all questions
 func shuffleQuestions(questions []question) []question {
-	rand.Seed(time.Now().UnixNano())
-	rand.Shuffle(len(questions), func(i, j int) {
-		questions[i], questions[j] =questions[j], questions[i]
+	rand.NewSource(time.Now().UnixNano())
+	rand.Shuffle(len(questions), func(i int, j int) {
+		questions[i], questions[j] = questions[j], questions[i]
 	})
 
 	return questions
@@ -114,33 +115,32 @@ func showQuiz(questions []question) {
 	correctAnswers := 0
 	timer := time.NewTimer(time.Duration(*timeLimit) * time.Second)
 
-	totalQuestions := len(questions);
+	totalQuestions := len(questions)
 	for i, problem := range questions {
 		fmt.Printf("Question %d: %s\n", i+1, problem.question)
 
 		go getAnswer()
 
 		if !checkAnswer(timer, totalQuestions, &correctAnswers, problem.answer) {
-			break;
+			break
 		}
 	}
 }
-
 
 // checkAnswer takes the question's correct answer and validates it against user's input.
 // If time is up, it returns false, else true
 func checkAnswer(timer *time.Timer, totalQuestions int, correctAnswers *int, answer string) bool {
 	select {
-		case <-timer.C:
-			showScore(*correctAnswers, totalQuestions)
+	case <-timer.C:
+		showScore(*correctAnswers, totalQuestions)
 
-			close(answerCh)
-			return false
-		case resp := <-answerCh:
-			if resp == answer {
-				*correctAnswers++
-			}
-			return true
+		close(answerCh)
+		return false
+	case resp := <-answerCh:
+		if resp == answer {
+			*correctAnswers++
+		}
+		return true
 	}
 }
 
