@@ -16,7 +16,7 @@ func checkerror(e error) {
 }
 
 func hello() {
-  fmt.Println("Hello world goroutine")
+	fmt.Println("Hello world goroutine")
 }
 
 func main() {
@@ -27,8 +27,8 @@ func main() {
 	// fmt.Println(a)
 
 	go hello()
-  time.Sleep(time.Millisecond)
-  fmt.Print(time.September.String())
+	time.Sleep(time.Millisecond)
+	fmt.Print(time.September.String())
 
 	// f, err := os.Open("../c/hello_world.c")
 	// checkerror(err)
