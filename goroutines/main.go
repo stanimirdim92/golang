@@ -20,11 +20,11 @@ func hello() {
 }
 
 func main() {
-	// fmt.Println("Hello, 世界")
-	// a := 1
-	// fmt.Println(a)
-	// a = 3
-	// fmt.Println(a)
+	fmt.Println("Hello, 世界")
+	a := 1
+	fmt.Println(a)
+	a = 3
+	fmt.Println(a)
 
 	go hello()
 	time.Sleep(time.Millisecond)
