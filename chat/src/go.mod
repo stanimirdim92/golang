@@ -1,4 +1,4 @@
-module github.com/stanimirdim92/golang/chat
+module chat
 
 go 1.21
 

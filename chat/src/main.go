@@ -1,14 +1,21 @@
 package main
 
-import "net/http"
+import (
+	"chat/client"
+	"net/http"
+)
 
 func main() {
-	manager := NewManager()
-	go manager.start()
+	manager := client.NewManager()
+	go manager.Start()
 
+	startServer(manager)
+}
+
+func startServer(manager *client.Manager) {
 	http.HandleFunc("/ws", func(w http.ResponseWriter, r *http.Request) {
-		wsPage(w, r, manager)
+		manager.WsPage(w, r)
 	})
 
-	http.ListenAndServe(":12345", nil)
+	http.ListenAndServe(":80", nil)
 }
