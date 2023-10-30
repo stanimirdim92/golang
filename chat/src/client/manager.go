@@ -9,13 +9,13 @@ import (
 
 type Manager struct {
 	// Registered clients.
-	clients map[*client]bool
+	clients map[*Client]bool
 	// Inbound messages from the clients.
 	broadcast chan []byte
 	// Register requests from the clients.
-	register chan *client
+	register chan *Client
 	// Unregister requests from clients.
-	unregister chan *client
+	unregister chan *Client
 }
 
 var upgrader = websocket.Upgrader{
@@ -29,10 +29,10 @@ var upgrader = websocket.Upgrader{
 
 func NewManager() *Manager {
 	return &Manager{
-		clients:    make(map[*client]bool),
+		clients:    make(map[*Client]bool),
 		broadcast:  make(chan []byte),
-		register:   make(chan *client),
-		unregister: make(chan *client),
+		register:   make(chan *Client),
+		unregister: make(chan *Client),
 	}
 }
 
@@ -40,7 +40,7 @@ func (manager *Manager) Start() *Manager {
 	for {
 		select {
 		case conn := <-manager.register:
-			manager.clients[conn] = true // put the client inside a map
+			manager.clients[conn] = true // put the Client inside a map
 			jsonMessage, _ := json.Marshal(&Message{Content: "Client has connected."})
 			manager.send(jsonMessage, conn)
 
@@ -65,7 +65,7 @@ func (manager *Manager) Start() *Manager {
 	}
 }
 
-func (manager *Manager) send(message []byte, ignore *client) {
+func (manager *Manager) send(message []byte, ignore *Client) {
 	for conn := range manager.clients {
 		if conn != ignore {
 			conn.send <- message
@@ -83,15 +83,15 @@ func (manager *Manager) WsPage(res http.ResponseWriter, req *http.Request) {
 
 	//defer conn.Close()
 
-	client := newClient(conn)
+	c := NewClient(conn)
 
-	manager.register <- client
+	manager.register <- c
 
-	go manager.Read(client)
-	go manager.Write(client)
+	go manager.Read(c)
+	go manager.Write(c)
 }
 
-func (manager *Manager) Read(client *client) {
+func (manager *Manager) Read(client *Client) {
 	defer func() {
 		manager.unregister <- client
 	}()
@@ -112,7 +112,7 @@ func (manager *Manager) Read(client *client) {
 	}
 }
 
-func (manager *Manager) Write(client *client) {
+func (manager *Manager) Write(client *Client) {
 	for {
 		select {
 		case message, ok := <-client.send:

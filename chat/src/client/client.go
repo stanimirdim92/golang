@@ -7,7 +7,7 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-type client struct {
+type Client struct {
 	id string
 	// The websocket connection.
 	socket *websocket.Conn
@@ -15,7 +15,7 @@ type client struct {
 	send chan []byte
 }
 
-func (c client) RandomString(n int) string {
+func (c Client) RandomString(n int) string {
 	b := make([]byte, n)
 	_, err := rand.Read(b)
 	if err != nil {
@@ -24,8 +24,8 @@ func (c client) RandomString(n int) string {
 	return base64.StdEncoding.EncodeToString(b)
 }
 
-func newClient(conn *websocket.Conn) *client {
-	return &client{
+func NewClient(conn *websocket.Conn) *Client {
+	return &Client{
 		id:     uuid.NewV4().String(),
 		socket: conn,
 		send:   make(chan []byte),
