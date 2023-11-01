@@ -2,6 +2,7 @@ package main
 
 import (
 	"chat/client"
+	"log"
 	"net/http"
 )
 
@@ -17,5 +18,5 @@ func startServer(manager *client.Manager) {
 		manager.WsPage(w, r)
 	})
 
-	http.ListenAndServe(":80", nil)
+	log.Fatal(http.ListenAndServe(":80", nil))
 }

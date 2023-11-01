@@ -81,7 +81,7 @@ func (manager *Manager) WsPage(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	//defer conn.Close()
+	defer conn.Close()
 
 	c := NewClient(conn)
 
